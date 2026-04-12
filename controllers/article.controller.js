@@ -2,24 +2,12 @@ const Joi = require('joi');
 const ArticleModel = require("../models/article.model.js");
 
 const postArticle = async (req, res, next) => {
-    const articleSchema = Joi.object({
-        title: Joi.string().min(5).required(),
-        content: Joi.string().min(20).required(),
-        author: Joi.string().optional().default("Guest"),
-        tags: Joi.array().items(Joi.string()).optional(),
-        category: Joi.string().optional(),
-        isPublished: Joi.boolean().optional()
-    });
-
-    const {error, value} = articleSchema.validate(req.body);
-
-    if (error){
-        console.error(error);
-        return res.status(400).json("Please provide article title and content")
-    }
-
     try{
-        const newArticle = new ArticleModel(value);
+        const newArticle = new ArticleModel({
+            title: req.body.title,
+            content: req.body.content,
+            author: req.user._id
+        });
         await newArticle.save();
         return res.status(201).json({
             message: "Article created",
@@ -37,7 +25,7 @@ const getAllArticles = async (req, res, next) => {
     const skip = (page - 1) * limit;
 
     try{
-        const articles = await ArticleModel.find({})
+        const articles = await ArticleModel.find({}).populate("author", "name _id email")
         .sort({createdAt: - 1})
         .limit(limit)
         .skip(skip);
@@ -74,65 +62,62 @@ const getArticleByID = async (req, res, next) => {
 }
 
 const updateArticleByID = async (req, res, next) => {
-    const articleSchema = Joi.object({
-        title: Joi.string().min(5).optional(),
-        content: Joi.string().min(20).optional(),
-        author: Joi.string().optional(),
-        tags: Joi.array().items(Joi.string()).optional(),
-        category: Joi.string().optional(),
-        isPublished: Joi.boolean().optional(),
-        likes: Joi.number().optional(),
-        views: Joi.number().optional()
-    });
+    try {
+        const article = await ArticleModel.findById(req.params.id);
 
-    const {error, value} = articleSchema.validate(req.body);
-
-    if(error){
-        console.error(error);
-        return res.status(400).json('Please provide article title and content');
-    }
-
-    try{
-        const updatedArticle = await ArticleModel.findByIdAndUpdate(req.params.id, {...value},
-            {
-                new: true,
-                runValidators: true,
-            }
-        );
-
-        if(!updatedArticle){
+        if (!article) {
             return res.status(404).json({
-                message: "article not found",
+                message: "Article not found"
             });
         }
+
+        // 🔥 OWNERSHIP CHECK
+        if (article.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "You are not allowed to update this article"
+            });
+        }
+
+        const updatedArticle = await ArticleModel.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
 
         res.status(200).json({
             message: "article updated",
-            data: updatedArticle,
+            data: updatedArticle
         });
-    }
-    catch(error){
-        console.error(error);
+
+    } catch (error) {
         next(error);
     }
-}
+};
 
 const deleteArticleByID = async (req, res, next) => {
-    try{
-        const article = await ArticleModel.findByIdAndDelete(req.params.id);
+    try {
+        const article = await ArticleModel.findById(req.params.id);
 
-        if(!article){
+        if (!article) {
             return res.status(404).json({
-                message: 'Article not found'
+                message: "Article not found"
             });
         }
 
+        // 🔥 OWNERSHIP CHECK
+        if (article.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                message: "You are not allowed to delete this article"
+            });
+        }
+
+        await ArticleModel.findByIdAndDelete(req.params.id);
+
         res.status(200).json({
-            message: 'Article deleted'
+            message: "Article deleted"
         });
-    }
-    catch(error){
-        console.error(error);
+
+    } catch (error) {
         next(error);
     }
 };

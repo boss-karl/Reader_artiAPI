@@ -12,8 +12,9 @@ const articleSchema = new mongoose.Schema({
         minlength: 20
     },
     author: {
-        type: String,
-        default: "Guest"
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
     },
     tags: {
         type: [String],
