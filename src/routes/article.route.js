@@ -12,13 +12,13 @@ const { validatePostArticle, validateUpdateArticle } = require('../validations/p
 
 const router = express.Router();
 
-router.use(requireAuth);
+// router.use(requireAuth);
 
-router.post('/articles', validatePostArticle, postArticle);
-router.get('/articles', getAllArticles);
-router.get('/articles/search',  searchArticles);
-router.get('/articles/:id',  getArticleByID);
-router.put('/articles/:id', validateUpdateArticle, updateArticleByID);
-router.delete('/articles/:id', deleteArticleByID);
+router.post('/articles', validatePostArticle, requireAuth, postArticle);
+router.get('/articles', requireAuth, getAllArticles);
+router.get('/articles/search', requireAuth, searchArticles);
+router.get('/articles/:id', requireAuth, getArticleByID);
+router.put('/articles/:id', validateUpdateArticle, requireAuth, updateArticleByID);
+router.delete('/articles/:id', requireAuth, deleteArticleByID);
 
 module.exports = router;

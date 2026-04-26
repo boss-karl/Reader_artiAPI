@@ -13,7 +13,7 @@ const registerUser = async (req, res, next) =>{
             return res.status(400).json({message: "User already exists"});
         }
 
-        await hash_password(password);
+        const hashed = await hash_password(password);
 
         const user = new UserModel({
             email: email,
@@ -33,12 +33,6 @@ const registerUser = async (req, res, next) =>{
 }
 
 const loginUser = async (req, res, next) =>{
-
-    const {error} = loginSchema.validate(req.body);
-    if(error){
-        res.status(400).json({message: error.details[0].message});
-    }
-
     try{
         const {email, password} = req.body;
 
