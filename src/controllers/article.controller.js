@@ -2,23 +2,30 @@ const Joi = require('joi');
 const ArticleModel = require("../models/article.model.js");
 
 const postArticle = async (req, res, next) => {
-    try{
+    try {
+        const imageUrls = req.files ? req.files.map(file => file.path) : [];
+
         const newArticle = new ArticleModel({
             title: req.body.title,
             content: req.body.content,
-            author: req.user._id
+            author: req.user._id,
+            images: imageUrls
         });
+        console.log(req.files);
+        console.log(imageUrls);
+
         await newArticle.save();
+
         return res.status(201).json({
             message: "Article created",
             data: newArticle
         });
-    }
-    catch(error){
+
+    } catch (error) {
         console.error(error);
         next(error);
     }
-}
+};
 
 const getAllArticles = async (req, res, next) => {
     const {limit = 10, page = 1} = req.query;

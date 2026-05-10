@@ -3,8 +3,8 @@ const cors = require('cors');
 const RequestLogger = require("./middlewares/logger.js");
 const errorHandler = require("./middlewares/error_handler.js");
 
-const ArticleRoutes = require('./routes/article.route.js');
 const UserRoutes = require('./routes/user.routes.js');
+const ArticleRoutes = require('./routes/article.route.js');
 
 const app = express();
 
